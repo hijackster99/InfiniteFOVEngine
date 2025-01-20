@@ -175,39 +175,77 @@ LRESULT CALLBACK Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 				window->mouse.OnMouseLeave();
 			}
 		}
-	}
 		break;
+	}
 	case WM_LBUTTONDOWN:
 	{
 		const POINTS pt = MAKEPOINTS(lparam);
 		window->mouse.OnLeftPressed(pt.x, pt.y);
-	}
 		break;
+	}
 	case WM_LBUTTONUP:
 	{
 		const POINTS pt = MAKEPOINTS(lparam);
 		window->mouse.OnLeftReleased(pt.x, pt.y);
-	}
 		break;
+	}
 	case WM_RBUTTONDOWN:
 	{
 		const POINTS pt = MAKEPOINTS(lparam);
 		window->mouse.OnRightPressed(pt.x, pt.y);
-	}
 		break;
+	}
 	case WM_RBUTTONUP:
 	{
 		const POINTS pt = MAKEPOINTS(lparam);
 		window->mouse.OnRightReleased(pt.x, pt.y);
-	}
 		break;
+	}
+	case WM_MBUTTONDOWN:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnMiddlePressed(pt.x, pt.y);
+		break;
+	}
+	case WM_MBUTTONUP:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnMiddleReleased(pt.x, pt.y);
+		break;
+	}
+	case WM_XBUTTONDOWN:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		if (GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
+		{
+			window->mouse.OnX1Pressed(pt.x, pt.y);
+		}
+		else if(GET_XBUTTON_WPARAM(wparam) == XBUTTON2)
+		{
+			window->mouse.OnX2Pressed(pt.x, pt.y);
+		}
+		break;
+	}
+	case WM_XBUTTONUP:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		if (GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
+		{
+			window->mouse.OnX1Released(pt.x, pt.y);
+		}
+		else if (GET_XBUTTON_WPARAM(wparam) == XBUTTON2)
+		{
+			window->mouse.OnX2Released(pt.x, pt.y);
+		}
+		break;
+	}
 	case WM_MOUSEWHEEL:
 	{
 		const POINTS pt = MAKEPOINTS(lparam);
 		const int delta = GET_WHEEL_DELTA_WPARAM(wparam);
 		window->mouse.OnWheelDelta(pt.x, pt.y, delta);
-	}
 		break;
+	}
 	}
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }

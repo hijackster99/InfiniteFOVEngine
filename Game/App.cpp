@@ -19,8 +19,16 @@ int App::Go()
 
 void App::DoFrame()
 {
-	const float t = timer.Peek();
-	std::ostringstream oss;
-	oss << "Time elapsed: " << std::setprecision(1) << std::fixed << t << "s";
-	wnd.SetTitle(oss.str());
+	if (wnd.mouse.IsMiddlePressed())
+	{
+		wnd.SetTitle("Middle");
+	}
+	else if (wnd.mouse.IsX1Pressed())
+	{
+		wnd.SetTitle("X1");
+	}
+	else if (wnd.mouse.IsX2Pressed())
+	{
+		wnd.SetTitle("X2");
+	}
 }

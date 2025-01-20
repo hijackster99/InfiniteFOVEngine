@@ -43,6 +43,9 @@ HINSTANCE Window::WinDef::GetInstance() noexcept
 }
 
 Window::Window(int width, int height, const TCHAR* name, bool isPrimary)
+	:
+	width(width),
+	height(height)
 {
 	_isPrimary = isPrimary;
 	this->width = width;
@@ -52,7 +55,7 @@ Window::Window(int width, int height, const TCHAR* name, bool isPrimary)
 	rect.right = width + rect.left;
 	rect.top = 100;
 	rect.bottom = height + rect.top;
-	if (FAILED(AdjustWindowRect(&rect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE)))
+	if (AdjustWindowRect(&rect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE) == 0)
 	{
 		throw IFWNDLASTEXCEPT();
 	};
@@ -75,6 +78,33 @@ Window::~Window()
 	if(alive)
 		DestroyWindow(hwnd);
 }
+
+void Window::SetTitle(const std::string& title)
+{
+	if (SetWindowTextA(hwnd, title.c_str()) == 0)
+	{
+		throw IFWNDLASTEXCEPT();
+	}
+}
+
+std::optional<int> Window::ProcessMessage()
+{
+	MSG msg;
+
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+	{
+		if (msg.message == WM_QUIT)
+		{
+			return msg.wParam;
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return {};
+}
+
 bool Window::isPrimary() noexcept
 {
 	return _isPrimary;
@@ -100,6 +130,84 @@ LRESULT CALLBACK Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 		if(window->isPrimary()) PostQuitMessage(0);
 		else window->Kill();
 		return 0;
+	case WM_KILLFOCUS:
+		window->kbd.ClearState();
+		break;
+
+	//Keyboard
+	case WM_KEYDOWN:
+	case WM_SYSKEYDOWN:
+		if (!(lparam & 0x40000000) || window->kbd.IsAutoRepeat())
+		{
+			window->kbd.OnKeyPress(static_cast<unsigned char>(wparam));
+		}
+		break;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		window->kbd.OnKeyRelease(static_cast<unsigned char>(wparam));
+		break;
+	case WM_CHAR:
+		window->kbd.OnChar(static_cast<unsigned char>(wparam));
+		break;
+
+	//Mouse
+	case WM_MOUSEMOVE:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		if (pt.x >= 0 && pt.x < window->width && pt.y >= 0 && pt.y < window->height)
+		{
+			window->mouse.OnMouseMove(pt.x, pt.y);
+			if (!window->mouse.InWindow())
+			{
+				SetCapture(window->hwnd);
+				window->mouse.OnMouseEnter();
+			}
+		}
+		else
+		{
+			if (wparam & (MK_LBUTTON | MK_RBUTTON))
+			{
+				window->mouse.OnMouseMove(pt.x, pt.y);
+			}
+			else
+			{
+				ReleaseCapture();
+				window->mouse.OnMouseLeave();
+			}
+		}
+	}
+		break;
+	case WM_LBUTTONDOWN:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnLeftPressed(pt.x, pt.y);
+	}
+		break;
+	case WM_LBUTTONUP:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnLeftReleased(pt.x, pt.y);
+	}
+		break;
+	case WM_RBUTTONDOWN:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnRightPressed(pt.x, pt.y);
+	}
+		break;
+	case WM_RBUTTONUP:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		window->mouse.OnRightReleased(pt.x, pt.y);
+	}
+		break;
+	case WM_MOUSEWHEEL:
+	{
+		const POINTS pt = MAKEPOINTS(lparam);
+		const int delta = GET_WHEEL_DELTA_WPARAM(wparam);
+		window->mouse.OnWheelDelta(pt.x, pt.y, delta);
+	}
+		break;
 	}
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }

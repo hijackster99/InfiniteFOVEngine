@@ -1,21 +1,10 @@
-#include "Window.h"
+#include "App.h"
 
 int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR lpCmdLine, int nCmdShow)
 {
 	try
 	{
-		Window win(1080, 720, TEXT("Game Window"), true);
-		Window win2(1000, 100, TEXT("Auxilliary Window"));
-
-		MSG msg;
-		BOOL gResult;
-		while ((gResult = GetMessage(&msg, nullptr, 0, 0)) > 0)
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-
-		return gResult == -1 ? -1 : msg.wParam;
+		return App{}.Go();
 	}
 	catch (const IFException& e)
 	{

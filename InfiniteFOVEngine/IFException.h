@@ -3,7 +3,7 @@
 #include <exception>
 #include <string>
 
-class IFException : public std::exception
+class __declspec(dllexport) IFException : public std::exception
 {
 public:
 	IFException(int line, const char* file) noexcept;

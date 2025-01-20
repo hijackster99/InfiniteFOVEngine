@@ -1,11 +1,14 @@
 #pragma once
 #include "IFEWin.h"
 #include "IFException.h"
+#include "Keyboard.h"
+#include "Mouse.h"
+#include <optional>
 
 class __declspec(dllexport) Window
 {
 public:
-	class Exception : public IFException
+	class __declspec(dllexport) Exception : public IFException
 	{
 	public:
 		Exception(int line, const char* file, HRESULT hr) noexcept;
@@ -37,12 +40,17 @@ public:
 	~Window();
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
+	void SetTitle(const std::string& title);
+	static std::optional<int> ProcessMessage();
 	bool isPrimary() noexcept;
 	bool isAlive() noexcept;
 	void Kill();
 private:
 	static LRESULT CALLBACK HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
+public:
+	Keyboard kbd;
+	Mouse mouse;
+private:
 	int width;
 	int height;
 	HWND hwnd;

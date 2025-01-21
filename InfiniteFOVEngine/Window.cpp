@@ -1,9 +1,7 @@
 #include "pch.h"
 #include "Window.h"
-#include <tchar.h>
-#include <sstream>
-#include <stringapiset.h>
 #include "resource.h"
+#include <sstream>
 
 Window::WinDef Window::WinDef::defClass;
 
@@ -57,14 +55,14 @@ Window::Window(int width, int height, const TCHAR* name, bool isPrimary)
 	rect.bottom = height + rect.top;
 	if (AdjustWindowRect(&rect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE) == 0)
 	{
-		throw IFWNDLASTEXCEPT();
+		throw IF_WND_LASTEXCEPT();
 	};
 
 	hwnd = CreateWindow(WinDef::GetName(), name, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top, nullptr, nullptr, WinDef::GetInstance(), nullptr);
 	
 	if (hwnd == nullptr)
 	{
-		throw IFWNDLASTEXCEPT();
+		throw IF_WND_LASTEXCEPT();
 	}
 
 	alive = true;
@@ -72,6 +70,8 @@ Window::Window(int width, int height, const TCHAR* name, bool isPrimary)
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 	
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
+
+	pGfx = std::make_unique<Graphics>(hwnd);
 }
 Window::~Window()
 {
@@ -79,11 +79,11 @@ Window::~Window()
 		DestroyWindow(hwnd);
 }
 
-void Window::SetTitle(const std::string& title)
+void Window::SetTitle(const tstring& title)
 {
-	if (SetWindowTextA(hwnd, title.c_str()) == 0)
+	if (SetWindowText(hwnd, title.c_str()) == 0)
 	{
-		throw IFWNDLASTEXCEPT();
+		throw IF_WND_LASTEXCEPT();
 	}
 }
 
@@ -103,6 +103,13 @@ std::optional<int> Window::ProcessMessage()
 	}
 
 	return {};
+}
+
+Graphics& Window::Gfx()
+{
+	if (!pGfx)
+		throw IF_NOGFX_EXCEPT();
+	return *pGfx;
 }
 
 bool Window::isPrimary() noexcept
@@ -250,47 +257,74 @@ LRESULT CALLBACK Window::HandleMsg(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-Window::Exception::Exception(int line, const char* file, HRESULT hr) noexcept
+Window::HrException::HrException(int line, const TCHAR* file, HRESULT hr) noexcept
 	:
-	IFException(line, file),
+	Exception(line, file),
 	hr(hr)
 {}
 
-const char* Window::Exception::what() const noexcept
+const char* Window::HrException::what() const noexcept
 {
+#ifndef UNICODE
+
 	std::ostringstream oss;
 	oss << GetType() << std::endl
 		<< "[Error Code] " << GetErrorCode() << std::endl
 		<< "[Description] " << GetErrorString() << std::endl
 		<< GetOriginString();
+
 	whatBuffer = oss.str();
 	return whatBuffer.c_str();
+#else
+	return "";
+#endif
 }
 
-const char* Window::Exception::GetType() const noexcept
+const WCHAR* Window::HrException::wwhat() const noexcept
 {
-	return "IF Window Exception";
+#ifdef UNICODE
+	std::wostringstream oss;
+	oss << GetType() << std::endl
+		<< "[Error Code] " << GetErrorCode() << std::endl
+		<< "[Description] " << GetErrorString() << std::endl
+		<< GetOriginString();
+
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+#else
+	return L"";
+#endif
 }
 
-std::string Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
+const TCHAR* Window::HrException::GetType() const noexcept
 {
-	char* pMsgBuf = nullptr;
-	DWORD nMsgLen = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&pMsgBuf), 0, nullptr);
+	return TEXT("IFE Window Exception");
+}
+
+tstring Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
+{
+	TCHAR* pMsgBuf = nullptr;
+	DWORD nMsgLen = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPTSTR>(&pMsgBuf), 0, nullptr);
 	if (nMsgLen == 0)
 	{
-		return "Unidentified Error Code";
+		return TEXT("Unidentified Error Code");
 	}
-	std::string errorString = pMsgBuf;
+	tstring errorString = pMsgBuf;
 	LocalFree(pMsgBuf);
 	return errorString;
 }
 
-HRESULT Window::Exception::GetErrorCode() const noexcept
+HRESULT Window::HrException::GetErrorCode() const noexcept
 {
 	return hr;
 }
 
-std::string Window::Exception::GetErrorString() const noexcept
+tstring Window::HrException::GetErrorString() const noexcept
 {
 	return TranslateErrorCode(hr);
+}
+
+const TCHAR* Window::NoGfxException::GetType() const noexcept
+{
+	return TEXT("IFE No Grapohics Exception");
 }

@@ -8,7 +8,7 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR lpCmdLine, int n
 	}
 	catch (const IFException& e)
 	{
-		MessageBoxA(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
+		MessageBox(nullptr, e.twhat(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
 	}
 	catch (const std::exception& e)
 	{
@@ -16,7 +16,7 @@ int CALLBACK WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR lpCmdLine, int n
 	}
 	catch ( ... )
 	{
-		MessageBoxA(nullptr, "No Details Available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
+		MessageBox(nullptr, TEXT("No Details Available"), TEXT("Unknown Exception"), MB_OK | MB_ICONEXCLAMATION);
 	}
 	return -1;
 }

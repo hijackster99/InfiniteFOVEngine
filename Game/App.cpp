@@ -19,16 +19,7 @@ int App::Go()
 
 void App::DoFrame()
 {
-	if (wnd.mouse.IsMiddlePressed())
-	{
-		wnd.SetTitle("Middle");
-	}
-	else if (wnd.mouse.IsX1Pressed())
-	{
-		wnd.SetTitle("X1");
-	}
-	else if (wnd.mouse.IsX2Pressed())
-	{
-		wnd.SetTitle("X2");
-	}
+	const float c = sin(timer.Peek()) / 2.0f + 0.5f;
+	wnd.Gfx().ClearBuffer(c, c, 1.0f);
+	wnd.Gfx().EndFrame();
 }

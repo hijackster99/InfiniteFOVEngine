@@ -3,22 +3,36 @@
 #include "IFException.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include "Graphics.h"
 #include <optional>
+#include <memory>
 
 class __declspec(dllexport) Window
 {
 public:
 	class __declspec(dllexport) Exception : public IFException
 	{
+		using IFException::IFException;
 	public:
-		Exception(int line, const char* file, HRESULT hr) noexcept;
+		static tstring TranslateErrorCode(HRESULT hr) noexcept;
+	};
+	class __declspec(dllexport) HrException : public Exception
+	{
+	public:
+		HrException(int line, const TCHAR* file, HRESULT hr) noexcept;
 		const char* what() const noexcept override;
-		virtual const char* GetType() const noexcept override;
-		static std::string TranslateErrorCode(HRESULT hr) noexcept;
+		const WCHAR* wwhat() const noexcept override;
+		virtual const TCHAR* GetType() const noexcept override;
 		HRESULT GetErrorCode() const noexcept;
-		std::string GetErrorString() const noexcept;
+		tstring GetErrorString() const noexcept;
 	private:
 		HRESULT hr;
+	};
+	class NoGfxException : public Exception
+	{
+	public:
+		using Exception::Exception;
+		const TCHAR* GetType() const noexcept override;
 	};
 private:
 	class WinDef
@@ -40,8 +54,9 @@ public:
 	~Window();
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
-	void SetTitle(const std::string& title);
+	void SetTitle(const tstring& title);
 	static std::optional<int> ProcessMessage();
+	Graphics& Gfx();
 	bool isPrimary() noexcept;
 	bool isAlive() noexcept;
 	void Kill();
@@ -54,10 +69,12 @@ private:
 	int width;
 	int height;
 	HWND hwnd;
+	std::unique_ptr<Graphics> pGfx;
 	bool _isPrimary;
 
 	bool alive;
 };
 
-#define IFWNDEXCEPT(hr) Window::Exception(__LINE__, __FILE__, hr)
-#define IFWNDLASTEXCEPT() Window::Exception(__LINE__, __FILE__, GetLastError())
+#define IF_WND_EXCEPT(hr) Window::HrException(__LINE__, TEXT(__FILE__), hr)
+#define IF_WND_LASTEXCEPT() Window::HrException(__LINE__, TEXT(__FILE__), GetLastError())
+#define IF_NOGFX_EXCEPT() Window::NoGfxException(__LINE__, TEXT(__FILE__))

@@ -18,9 +18,6 @@
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException(__LINE__, TEXT(__FILE__), (hr))
 #endif
 
-//#define GFX_THROW_FAILED(hrcall) if(FAILED(hr = (hrcall))) throw Graphics::HrException(__LINE__,__FILE__, hr)
-//#define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException(__LINE__, __FILE__, (hr))
-
 Graphics::Graphics(HWND hwnd)
 {
 	DXGI_SWAP_CHAIN_DESC sd = {};
@@ -49,22 +46,10 @@ Graphics::Graphics(HWND hwnd)
 
 	GFX_THROW_INFO(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, swapCreateFlags, nullptr, 0, D3D11_SDK_VERSION, &sd, &pChain, &pDevice, nullptr, &pContext));
 
-	ID3D11Resource* pBackBuffer = nullptr;
-	GFX_THROW_INFO(pChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer)));
-	GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pTarget));
+	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
+	GFX_THROW_INFO(pChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
+	GFX_THROW_INFO(pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget));
 	pBackBuffer->Release();
-}
-
-Graphics::~Graphics()
-{
-	if (pTarget != nullptr)
-		pTarget->Release();
-	if (pDevice != nullptr)
-		pContext->Release();
-	if (pChain != nullptr)
-		pChain->Release();
-	if (pDevice != nullptr)
-		pDevice->Release();
 }
 
 void Graphics::EndFrame()
@@ -88,7 +73,7 @@ void Graphics::EndFrame()
 void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
 	const float color[] = { red, green, blue, 1.0f };
-	pContext->ClearRenderTargetView(pTarget, color);
+	pContext->ClearRenderTargetView(pTarget.Get(), color);
 }
 
 Graphics::HrException::HrException(int line, const TCHAR* file, HRESULT hr, std::vector<tstring> infoMsgs) noexcept

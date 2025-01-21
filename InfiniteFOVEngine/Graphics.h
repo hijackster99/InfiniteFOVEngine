@@ -4,6 +4,7 @@
 #include "DxgiInfoManager.h"
 #include <vector>
 #include <d3d11.h>
+#include <wrl.h>
 
 class __declspec(dllexport) Graphics
 {
@@ -38,15 +39,19 @@ public:
 	Graphics(HWND hwnd);
 	Graphics(const Graphics&) = delete;
 	Graphics& operator=(const Graphics&) = delete;
-	~Graphics();
+	~Graphics() = default;
 	void EndFrame();
 	void ClearBuffer(float red, float green, float blue) noexcept;	
+	void DrawTestTriangle()
+	{
+
+	}
 private:
 #ifndef NDEBUG
 	DxgiInfoManager infoManager;
 #endif
-	ID3D11Device* pDevice = nullptr;
-	IDXGISwapChain* pChain = nullptr;
-	ID3D11DeviceContext* pContext = nullptr;
-	ID3D11RenderTargetView* pTarget = nullptr;
+	Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
+	Microsoft::WRL::ComPtr<IDXGISwapChain> pChain;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
 };

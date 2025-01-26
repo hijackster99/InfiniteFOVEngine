@@ -5,6 +5,7 @@
 #include <dxgidebug.h>
 #include <memory>
 #include <locale>
+#include "WindowThrows.h"
 
 #pragma comment(lib, "dxguid.lib")
 

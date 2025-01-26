@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "resource.h"
 #include <sstream>
+#include "WindowThrows.h"
 
 Window::WinDef Window::WinDef::defClass;
 

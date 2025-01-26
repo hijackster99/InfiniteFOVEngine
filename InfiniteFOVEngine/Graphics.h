@@ -5,9 +5,16 @@
 #include <vector>
 #include <d3d11.h>
 #include <wrl.h>
+#include <DirectXMath.h>
+#ifdef _DEBUG
+#define IS_DEBUG TRUE
+#else
+#define IS_DEBUG FALSE
+#endif
 
 class __declspec(dllexport) Graphics
 {
+	friend class __declspec(dllexport) Bindable;
 public:
 	class Exception : public IFException
 	{
@@ -52,9 +59,13 @@ public:
 	Graphics& operator=(const Graphics&) = delete;
 	~Graphics() = default;
 	void EndFrame();
-	void ClearBuffer(float red, float green, float blue) noexcept;	
-	void DrawTestTriangle();
+	void ClearBuffer(float red, float green, float blue) noexcept;
+	void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
+	void SetProjection(DirectX::FXMMATRIX proj) noexcept;
+	DirectX::XMMATRIX GetProjection() const noexcept;
+	void DrawTestTriangle(float angle, float x, float z);
 private:
+	DirectX::XMMATRIX projection;
 #ifndef NDEBUG
 	DxgiInfoManager infoManager;
 #endif
@@ -62,4 +73,5 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> pChain;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 };
